@@ -6,21 +6,26 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Templating</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- not write public here -->
 </head>
 <body>
-    <h1>Hi!Today is <%= day%></h1>
-    <ul>
-        <li>my first work</li>
-        <li>want to make program</li>
-        <li>your typed message is below<br></li>
+  <div class="box" id="heading"><h1>Hi!Today is <%= day%>
+    &#128512;
+  </h1>
+  </div>
+    
+   <div class="box">
         <%for(var i=0;i<(newItems.length);i++){%>
-        
-            <li><%=newItems[i]%></li>
+        <div class="item">
+          <input type="checkbox"><p><%=newItems[i]%></p>
+          </div>
+
        <% }%>
-    </ul>
-  <form action="/" method="post">
-    <input type="text"name ="item" placeholder="pls enter something" autofocus>
-    <button tpe="submit">submit</button>
+  <form class="item" action="/" method="post">
+    <input type="text"name ="item" placeholder="New Item" autocomplete="off" autofocus>
+    <button type="submit" name="list"value=<%=day%>>+</button>
   </form>
+  <div>
 </body>
 </html>
