@@ -23,12 +23,12 @@ async function run() {
  
 
   //creating the monogodb shema
-  const listSchema = new mongoose.Schema({ workList: String});
+  const listSchema = new mongoose.Schema({ workList:String});
 
   //creating model with ('collectionsName',shema);
   const listModel = mongoose.model('WORKLIST', listSchema);
   // geting data from database and insert in our arrayv
-  var data1=[];
+  var data1;
   // const docs =await listModel.find();
  
   
@@ -78,15 +78,18 @@ async function run()
   const docs =await listModel.find();
  
   
-  // console.log(docs);
-  data1=[];
-  const listArr=( docs.map(doc => doc.workList).sort());
-  for(const item of listArr)
-  {
-   //console.log(item);
-   data1.push(item);
-  }
-
+  //console.log(docs);
+ // console.log(docs.length);
+  data1=docs;
+//    const listArr=( docs.map(doc => doc.workList,doc=> doc._id).sort());
+//   for(const item of listArr)
+//   {
+//    console.log(item);
+//    //data1.push(item);
+//   }
+//data1.push(docs);
+//console.log(data1);
+//console.log(data1.length);
     res.render("list", {day: strDay,newItems:data1});// we use render to use ejs with html 
 }
   });   
@@ -129,7 +132,51 @@ app.post("/",function(req,res)
 }
 
 });   
-}            
+
+
+// Deleting list from database
+app.post("/delete",function(req,res)
+{
+  
+ const id=(req.body.checkbox).trim();
+ console.log(mongoose.isValidObjectId(id));// here I stuck due to id is string with extraspace so,it is not a valid object,so to make a valid object just add .trim();
+  
+listModel.findByIdAndRemove(id)
+  .then(function(doc) {
+    console.log('Document removed: ', doc);
+  })
+  .catch(function(err) {
+    console.log('Error: ', err);
+  });
+
+
+
+
+ res.redirect("/");
+  }
+);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
   
