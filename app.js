@@ -1,8 +1,26 @@
 const express=require("express");
 const bodyParser=require("body-parser");
+const _=require("lodash");
 //const ejs=require("ejs");// not require.
 const port=3000;
 const app=express();
+
+app.use((req, res, next) => {
+    if (req.originalUrl && req.originalUrl.split("/").pop() === 'favicon.ico') {
+        return res.sendStatus(204);
+    }
+    return next();
+});
+
+
+
+
+
+
+
+
+
+
 // now we use ejs templating to avoid write more html file containg almost same code.
 app.set('view engine', 'ejs');
 // make avilable static file.
@@ -12,44 +30,24 @@ app.use(bodyParser.urlencoded({extended:true}));
 
 // use mongoose
 const mongoose = require('mongoose');
+const { query } = require("express");
+var flag=true;
 
 run().catch(error => console.log(error.stack));
 
 async function run() {
   await mongoose.connect('mongodb://localhost:27017/TodoList', { useNewUrlParser: true });
+  let qrModel="";
 
-  // Clear the database every time. This is for the sake of example only,
-  // don't do this in prod :)
- 
-
-  //creating the monogodb shema
-  const listSchema = new mongoose.Schema({ workList:String});
-
-  //creating model with ('collectionsName',shema);
-  const listModel = mongoose.model('WORKLIST', listSchema);
-  // geting data from database and insert in our arrayv
-  var data1;
-  // const docs =await listModel.find();
- 
-  
-  //  // console.log(docs);
-  //  const listArr=( docs.map(doc => doc.workList).sort());
-  //  for(const item of listArr)
-  //  {
-  //   //console.log(item);
-  //   data1.push(item);
-  //  }
-
-  
+ //creating the monogodb shema
+ const listSchema = new mongoose.Schema({ workList:String});
+ //const listModel = mongoose.model('WORKLIST', listSchema);
 
 
+ if (qrModel === null) {
+  qrModel = mongoose.model("WORKLIST", listSchema);
+}
 
-
-
-
-
-
-// use a function to get today date
 //const echoDay=["sunday","monday","tuesday","wednesday","Thursday","Friday","saturday"];
 var today=new Date();
 var dayId=today.getDay();// it return integer coreespond to today day.
@@ -63,19 +61,19 @@ var options={
     month:"long"
 };
 var strDay=today.toDateString("en-US",options);// formating day date string.
-app.listen(port,function()
-{
-    console.log("Server started at port 3000");
-   // console.log(dateId);
-});
-app.get("/", (req, res) => {
+let query='';
+let arr=[];
+var data1;
+
+
+ app.get("/", (req, res) => {
 
   // Reading data from database.
   run().catch(error => console.log(error.stack));
 async function run()
 {
-
-  const docs =await listModel.find();
+  qrModel = mongoose.model("WORKLIST", listSchema);
+  const docs =await qrModel.find();
  
   
   //console.log(docs);
@@ -90,72 +88,212 @@ async function run()
 //data1.push(docs);
 //console.log(data1);
 //console.log(data1.length);
+query="/";
     res.render("list", {day: strDay,newItems:data1});// we use render to use ejs with html 
 }
   });   
-         
- app.get("/work",function(req,res)
-{
-  //   res.write("working");
-  //  // res.write(echoDay[ dayId]);
-  //   res.send();
-  res.render("list", {day:"WorkDay",newItems:workList});
-});
-
-
-// mogodb connection
-
-// insert one document or one by one
-
-// taking post request
-app.post("/",function(req,res)
-{
-  let logi=req.body.list;
-  if(logi=="WorkDay")
-  {
-    workList.push(req.body.item);
-    res.redirect("/work");
-  }else{
-  //console.log(req.body);
-  //data1.push(req.body.item);
+ 
   
-  // we dont use render because previour data get lost.
-// inserting document to our Database.
-  run().catch(error => console.log(error.stack));
+
+
+
+  app.post("/",function(req,res)
+  {
+    let logi=req.body.list;
+    run().catch(error => console.log(error.stack));
+    async function run()
+    {
+    if(logi==query)
+    {
+     
+      // qrModel = mongoose.model(query, listSchema);
+
+
+      await qrModel.create({ workList: req.body.item});
+     // workList.push(req.body.item);
+      res.redirect("/"+query);
+    }else{
+    //console.log(req.body);
+    //data1.push(req.body.item);
+    
+    // we dont use render because previour data get lost.
+  // inserting document to our Database.
+   
+   await qrModel.create({ workList: req.body.item});
+   console.log("inserted");
+     // console.log(docs);
+   res.redirect("/");
+   query="/";
+    }
+  }
+  
+  });   
+
+  app.get("/:topic",function(req,res)
+  {
+    run().catch(error => console.log(error.stack));
   async function run()
   {
- await listModel.create({ workList: req.body.item});
- console.log("inserted");
-   // console.log(docs);
- res.redirect("/");
+   
+   // console.log(qrModel);
+    //const docs =await qrModel.find();
+   // data1=docs;
+    //   res.write("working");
+    
+   // console.log(req.params.topic);
+     query=_.startCase(req.params.topic);
+      qrModel = mongoose.model(query, listSchema);
+
+      const docs =await qrModel.find();
+   data1=docs;
+
+    // arr.push(query);
+    //  // res.write(echoDay[ dayId]);
+    //   res.send();
+    res.render("list", {day:query,newItems:data1});
+   // query=`"/${query}"`;
+   // console.log(query);
   }
-}
-
-});   
-
-
-// Deleting list from database
+  }
+  );
+  
+// Deleting the data from database
 app.post("/delete",function(req,res)
 {
   
+ // console.log(req.body);
  const id=(req.body.checkbox).trim();
  console.log(mongoose.isValidObjectId(id));// here I stuck due to id is string with extraspace so,it is not a valid object,so to make a valid object just add .trim();
-  
-listModel.findByIdAndRemove(id)
+
+qrModel.findByIdAndRemove(id)
   .then(function(doc) {
     console.log('Document removed: ', doc);
+    if(query==="/")
+    res.redirect("/");
+    else{
+      res.redirect("/"+query);
+      
+    }
   })
   .catch(function(err) {
     console.log('Error: ', err);
-  });
-
-
-
-
- res.redirect("/");
-  }
-);
+  })});
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//   // Clear the database every time. This is for the sake of example only,
+//   // don't do this in prod :)
+ 
+
+ 
+//   //creating model with ('collectionsName',shema);
+  
+//   const workMOdel=mongoose.model('Topic',listSchema);
+//   // geting data from database and insert in our arrayv
+//   var data1;
+//   var query="";
+//   //var customListData;
+//   // const docs =await listModel.find();
+ 
+  
+//   //  // console.log(docs);
+//   //  const listArr=( docs.map(doc => doc.workList).sort());
+//   //  for(const item of listArr)
+//   //  {
+//   //   //console.log(item);
+//   //   data1.push(item);
+//   //  }
+
+  
+
+
+
+
+
+
+
+
+// // use a function to get today date
+
+
+       
+ 
+
+// console.log(query);
+// // mogodb connection
+
+// // insert one document or one by one
+
+// // taking post request
+// //const refe=`"/${query}"`;
+// //console.log(refe);
+
+
+// // Deleting list from database
+// app.post("/delete",function(req,res)
+// {
+  
+//  const id=(req.body.checkbox).trim();
+//  console.log(mongoose.isValidObjectId(id));// here I stuck due to id is string with extraspace so,it is not a valid object,so to make a valid object just add .trim();
+
+// listModel.findByIdAndRemove(id)
+//   .then(function(doc) {
+//     console.log('Document removed: ', doc);
+//   })
+//   .catch(function(err) {
+//    // console.log('Error: ', err);
+// workMOdel.findByIdAndRemove(id)
+// .then(function(doc)
+// {
+//   console.log('Document removed:',doc);
+
+// })
+// .catch(function(err)
+// {
+//   console.log('Error',err);
+// }
+// );
+
+
+
+
+
+
+
+//   });
+
+
+
+
+//  res.redirect("/");
+//   }
+// );
+// }
 
 
 
@@ -187,3 +325,8 @@ listModel.findByIdAndRemove(id)
 //   const [docs]=await personDetail.insertMany(Details);
 //  console.log( docs instanceof personDetail);// it return true on successfull insertion.
 //  console.log(docs.age)
+app.listen(port,function()
+{
+    console.log("Server started at port 3000");
+   // console.log(dateId);
+});
